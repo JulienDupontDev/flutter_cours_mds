@@ -21,7 +21,6 @@ Future<void> addTodoDialog(
           setState(() {
             _selectedTime = newTime;
           });
-          print(_selectedTime);
         }
 
         void setDate(newDate) {
@@ -95,6 +94,11 @@ Future<void> addTodoDialog(
               child: const Text('Add'),
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
+                  if (category == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Please select a category")));
+                    return;
+                  }
                   addTodo(Todo(
                       lastId + 1,
                       _titleController.text,

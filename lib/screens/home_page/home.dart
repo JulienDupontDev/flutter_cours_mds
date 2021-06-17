@@ -25,8 +25,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    const Key centerKey = ValueKey<String>('bottom-sliver-list');
-    List<Widget> projectsWidget = getList(context);
     return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -42,7 +40,21 @@ class _HomePageState extends State<HomePage> {
             crossAxisSpacing: 10,
             padding: const EdgeInsets.all(20),
             primary: false,
-            children: [...projectsWidget.toList()],
+            children: [
+              ...projects.map((project) {
+                return SizedBox(
+                    height: 50,
+                    child: TextButton(
+                        style: ButtonStyle(
+                            foregroundColor:
+                                MaterialStateProperty.all(Colors.white),
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.orange)),
+                        onPressed: () =>
+                            {Navigator.pushNamed(context, project.to)},
+                        child: Text(project.title)));
+              }).toList()
+            ],
           ),
         )));
   }
@@ -50,26 +62,9 @@ class _HomePageState extends State<HomePage> {
 
 var projects = [
   Project("Exercice 1", "/exo1"),
-  Project("Exercice 2", "/exo2"),
-  Project("Exercice 1", "/exo1"),
-  Project("Exercice 1", "/exo1"),
-  Project("Exercice 1", "/exo1")
+  Project("Exercice Todos", "/exo2"),
+  Project("Pokemon api", "/pokemon"),
 ];
-
-List<Widget> getList(context) {
-  List<Widget> children = [];
-  for (var i = 0; i < projects.length; i++) {
-    children.add(SizedBox(
-        height: 50,
-        child: TextButton(
-            style: ButtonStyle(
-                foregroundColor: MaterialStateProperty.all(Colors.white),
-                backgroundColor: MaterialStateProperty.all(Colors.orange)),
-            onPressed: () => {Navigator.pushNamed(context, projects[i].to)},
-            child: Text(projects[i].title))));
-  }
-  return children;
-}
 
 class Project {
   String title;

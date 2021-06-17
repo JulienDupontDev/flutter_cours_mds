@@ -3,6 +3,7 @@ import 'package:flutter_cours/screens/exo_1/exo1.dart';
 import 'package:flutter_cours/screens/exo_2/login.dart';
 import 'package:flutter_cours/screens/exo_2/todos.dart';
 import 'package:flutter_cours/screens/home_page/home.dart';
+import 'package:flutter_cours/screens/pokemon/pokemon.dart';
 
 void main() {
   runApp(MyApp());
@@ -25,13 +26,14 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-        primarySwatch: Colors.orange,
+        primarySwatch: Colors.blue,
       ),
       routes: {
         '/': (context) => HomePage(title: "Page d'accueil"),
         "/exo1": (context) => Exo1(title: "Exercice 1"),
-        "/exo2": (context) => Login(title: "Exercice 2"),
-        "/exo2/todos": (context) => Todos(title: "Todos")
+        "/exo2": (context) => Login(title: "Exercice Sign in"),
+        "/exo2/todos": (context) => Todos(title: "Exercice Todos"),
+        "/pokemon": (context) => Pokemons(),
       },
     );
   }
