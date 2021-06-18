@@ -1,7 +1,10 @@
 import 'dart:convert';
-
+import 'package:flutter_cours/models/pokemon_preview.dart';
+import 'package:flutter_cours/screens/pokemon/widgets/pokemon_preview.dart';
+import 'package:http/http.dart' as http;
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cours/screens/pokemon/widgets/search_bar.dart';
 
 class Pokemons extends StatefulWidget {
   const Pokemons({Key? key}) : super(key: key);
@@ -47,7 +50,8 @@ class Pokemon {
 class _PokemonsState extends State<Pokemons>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  List<Pokemon> pokemons = [];
+  List<PokemonPreview> _pokemons = [];
+  int _page = 1;
   @override
   void initState() {
     super.initState();
@@ -60,6 +64,26 @@ class _PokemonsState extends State<Pokemons>
     _controller.dispose();
   }
 
+  void fetchPokemons(String query) async {
+    String defaultPageSize = "10";
+    final response = await http.get(
+        Uri.parse(
+            'https://api.pokemontcg.io/v2/cards?q=supertype:pokemon ${query.length > 0 ? "name:$query" : ""}&page=$_page&pageSize=$defaultPageSize'),
+        headers: {"x-api-key": "99050b19-8ce8-4901-acbf-0858d56469ec"});
+    final converted = jsonDecode(response.body);
+    List<PokemonPreview> pokemonsToAdd = [];
+    // print();
+    converted['data'].forEach((pokemon) {
+      pokemonsToAdd.add(PokemonPreview(
+          id: pokemon['id'],
+          name: pokemon['name'],
+          imageUrl: pokemon['images']['small']));
+    });
+    setState(() {
+      _pokemons = pokemonsToAdd;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,7 +93,19 @@ class _PokemonsState extends State<Pokemons>
       ),
       body: SingleChildScrollView(
         child: Column(
-          children: [],
+          children: [
+            SearchBar(fetchPokemons: fetchPokemons),
+            Container(
+                height: 400,
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  children: [
+                    ..._pokemons
+                        .map((pokemon) => PokemonPreviewCard(pokemon: pokemon))
+                        .toList()
+                  ],
+                ))
+          ],
         ),
       ),
     );
