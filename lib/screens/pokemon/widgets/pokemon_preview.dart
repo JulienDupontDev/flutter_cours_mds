@@ -107,10 +107,9 @@ class _PokemonPreviewCardState extends State<PokemonPreviewCard> {
                                     Container(
                                   decoration: BoxDecoration(
                                     image: DecorationImage(
-                                        image: imageProvider,
-                                        fit: BoxFit.contain,
-                                        colorFilter: ColorFilter.mode(
-                                            Colors.red, BlendMode.colorBurn)),
+                                      image: imageProvider,
+                                      fit: BoxFit.contain,
+                                    ),
                                   ),
                                 ),
                                 placeholder: (context, url) =>
