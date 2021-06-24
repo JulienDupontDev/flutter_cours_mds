@@ -13,7 +13,7 @@ class FavoritePokemons extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Text("currently in development")],
+          children: [Text("currently under development")],
         ),
       ),
     );
