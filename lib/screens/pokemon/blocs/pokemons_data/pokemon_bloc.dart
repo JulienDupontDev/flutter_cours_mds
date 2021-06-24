@@ -28,41 +28,41 @@ class PokemonBloc extends Bloc<PokemonEvent, PokemonState> {
   @override
   Stream<PokemonState> mapEventToState(PokemonEvent event) async* {
     if (event is PokemonsFetched) {
-      yield await _mapPostFetchedToState(state, event.query, event.page);
+      yield await _mapPokemonsFetchedToState(state, event.query, event.page);
+    }
+
+    if (event is PokemonsRefresh) {
+      yield await _mapPokemonsRefreshedToState(state, event.query, event.page);
     }
   }
 
-  Future<PokemonState> _mapPokemonFavoriteRehydrate(
-      PokemonState state, List<String> favorites) async {
+  Future<PokemonState> _mapPokemonsRefreshedToState(
+      PokemonState state, String query, int page) async {
+    if (state.hasReachedMax && query == state.query) return state;
+
     try {
-      return state.copyWith(favorites: favorites);
-    } catch (e) {
-      return state;
+      final pokemons = await _fetchPokemons(query, page);
+      return pokemons.isEmpty
+          ? state.copyWith(
+              status: PokemonStatus.loading,
+              hasReachedMax: true,
+              page: page,
+              query: query,
+            )
+          : state.copyWith(
+              status: PokemonStatus.success,
+              page: pokemons['count'] > 0 ? page : state.page,
+              query: query,
+              totalCount: pokemons['totalCount'],
+              pokemons: pokemons['pokemonsToAdd'],
+              hasReachedMax: false,
+            );
+    } on Exception {
+      return state.copyWith(status: PokemonStatus.failure);
     }
   }
 
-  Future<PokemonState> _mapPokemonFavoriteToState(
-      PokemonState state, String id) async {
-    List<String> favorites = [...state.favorites];
-    print("hi ${state.favorites}");
-    try {
-      print(favorites.contains(id));
-      if (favorites.contains(id)) {
-        print("yes");
-        favorites.removeWhere((element) => element == id);
-      } else {
-        print("add");
-        favorites.add(id);
-      }
-      print("hi 2 $favorites");
-
-      return state.copyWith(favorites: favorites);
-    } catch (e) {
-      return state;
-    }
-  }
-
-  Future<PokemonState> _mapPostFetchedToState(
+  Future<PokemonState> _mapPokemonsFetchedToState(
       PokemonState state, String query, int page) async {
     if (state.hasReachedMax && query == state.query) return state;
 

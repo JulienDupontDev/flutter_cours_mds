@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/pokemons_data/pokemon_bloc.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'favorites_event.dart';
@@ -16,7 +17,7 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
     TransitionFunction<FavoritesEvent, FavoritesState> transitionFn,
   ) {
     return super.transformEvents(
-      events.debounceTime(const Duration(milliseconds: 500)),
+      events.debounceTime(const Duration(milliseconds: 50)),
       transitionFn,
     );
   }
@@ -44,17 +45,12 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
   Future<FavoritesState> _mapPokemonFavoriteToState(
       FavoritesState state, String id) async {
     List<String> favorites = [...state.favorites];
-    print("hi ${state.favorites}");
     try {
-      print(favorites.contains(id));
       if (favorites.contains(id)) {
-        print("yes");
         favorites.removeWhere((element) => element == id);
       } else {
-        print("add");
         favorites.add(id);
       }
-      print("hi 2 $favorites");
 
       return state.copyWith(favorites: favorites);
     } catch (e) {

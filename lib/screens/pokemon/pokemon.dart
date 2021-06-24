@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cours/models/pokemon_preview.dart';
 import 'package:flutter_cours/screens/pokemon/blocs/pokemons_data/pokemon_bloc.dart';
+import 'package:flutter_cours/screens/pokemon/widgets/favorites_page.dart';
 import 'package:flutter_cours/screens/pokemon/widgets/pokemon_list.dart';
 import 'package:flutter_cours/screens/pokemon/widgets/pokemon_preview.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +11,8 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cours/screens/pokemon/widgets/search_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'blocs/favorites/favorites_bloc.dart';
 
 class Pokemons extends StatefulWidget {
   const Pokemons({Key? key}) : super(key: key);
@@ -23,7 +26,6 @@ class _PokemonsState extends State<Pokemons>
   late AnimationController _controller;
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   late Future<List<String>?> _favorites;
-  late PokemonBloc _pokemonBloc;
 
   @override
   void initState() {
@@ -32,7 +34,6 @@ class _PokemonsState extends State<Pokemons>
     _favorites = _prefs.then((SharedPreferences prefs) {
       return prefs.getStringList("favorites");
     });
-    _pokemonBloc = context.read<PokemonBloc>();
     _init();
   }
 
@@ -47,8 +48,10 @@ class _PokemonsState extends State<Pokemons>
 
     try {
       List<String> favorites = prefs.getStringList("favorites") as List<String>;
-      print(prefs.getStringList("favorites"));
-      _pokemonBloc.add(PokemonsFetched());
+      context.read<PokemonBloc>().add(PokemonsFetched());
+      context
+          .read<FavoritesBloc>()
+          .add(PokemonFavoritesRehydrate(favorites: [...favorites]));
       // _pokemonBloc.add(PokemonFavoritesRehydrate(favorites: favorites));
     } catch (e) {}
   }
@@ -67,15 +70,27 @@ class _PokemonsState extends State<Pokemons>
               } else {
                 return Scaffold(
                     appBar: AppBar(
-                      centerTitle: true,
-                      title: Text("Pokemons api"),
-                    ),
-                    body: BlocBuilder<PokemonBloc, PokemonState>(
+                        title: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                          Text("Pokemons api"),
+                          IconButton(
+                              tooltip: "Favorites",
+                              splashRadius: 20,
+                              onPressed: () => {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                FavoritePokemons()))
+                                  },
+                              icon: Icon(Icons.star))
+                        ])),
+                    body: BlocBuilder<FavoritesBloc, FavoritesState>(
                         builder: (context, state) {
                       return SingleChildScrollView(
-                        child: Column(
-                          children: [SearchBar(), PokemonList()],
-                        ),
+                        child: Column(children: [SearchBar(), PokemonList()]),
                       );
                     }));
               }

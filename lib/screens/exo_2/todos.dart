@@ -177,8 +177,6 @@ class _Todos extends State<Todos> with SingleTickerProviderStateMixin {
   void updateTodo(Todo todo) {
     setState(() {
       int foundTodo = _todos.indexWhere((todoB) => todoB.id == todo.id);
-      print("found index $foundTodo");
-      print(todo.id);
       List<Todo> newList = _todos;
       newList[foundTodo] = todo;
       setState(() {
@@ -189,7 +187,6 @@ class _Todos extends State<Todos> with SingleTickerProviderStateMixin {
   }
 
   void deleteTodo(int id) {
-    // print("todo $id");
     setState(() {
       _todos.removeWhere((todo) => todo.id == id);
       _getTodosToDislay(_tabController.index);

@@ -30,6 +30,10 @@ class _PokemonListState extends State<PokemonList> {
           query: _pokemonBloc.state.query, page: _pokemonBloc.state.page + 1));
   }
 
+  Future<void> refresh() async {
+    _pokemonBloc.add(PokemonsRefresh(query: _pokemonBloc.state.query, page: 1));
+  }
+
   bool get _isBottom {
     if (!_scrollController.hasClients) return false;
     final maxScroll = _scrollController.position.maxScrollExtent;
@@ -56,17 +60,19 @@ class _PokemonListState extends State<PokemonList> {
               Container(
                 height: MediaQuery.of(context).size.height - 160,
                 child: Stack(children: [
-                  GridView.count(
-                    controller: _scrollController,
-                    crossAxisCount: 2,
-                    childAspectRatio: 2 / 3,
-                    children: [
-                      ...state.pokemons
-                          .map((pokemon) => BlocProvider(
-                              create: (_) => FavoritesBloc(),
-                              child: PokemonPreviewCard(pokemon: pokemon)))
-                          .toList()
-                    ],
+                  RefreshIndicator(
+                    onRefresh: refresh,
+                    child: GridView.count(
+                      controller: _scrollController,
+                      crossAxisCount: 2,
+                      childAspectRatio: 2 / 3,
+                      children: [
+                        ...state.pokemons
+                            .map((pokemon) =>
+                                PokemonPreviewCard(pokemon: pokemon))
+                            .toList()
+                      ],
+                    ),
                   ),
                   Visibility(
                     child: Positioned(

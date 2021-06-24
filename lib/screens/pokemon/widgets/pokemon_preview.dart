@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cours/models/pokemon_preview.dart';
 import 'package:flutter_cours/screens/pokemon/blocs/favorites/favorites_bloc.dart';
@@ -31,7 +32,6 @@ class _PokemonPreviewCardState extends State<PokemonPreviewCard> {
 
   Future<void> _setFavorite(favorites, isFavorite) async {
     final SharedPreferences prefs = await _prefs;
-    // print("is favorite $isFavorite");
     try {
       _favoritesBloc.add(PokemonFavorite(id: widget.pokemon.id));
 
@@ -74,10 +74,19 @@ class _PokemonPreviewCardState extends State<PokemonPreviewCard> {
                           children: [
                             Expanded(
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  Text(widget.pokemon.name),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(widget.pokemon.name),
+                                      ),
+                                    ),
+                                  ),
                                   IconButton(
                                       splashRadius: 20.0,
                                       onPressed: () => _setFavorite(

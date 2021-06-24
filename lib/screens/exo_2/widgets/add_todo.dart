@@ -130,8 +130,6 @@ Future<Null> datePicker(context, setDate, selectedDate) async {
     lastDate: DateTime(2100),
   );
   if (selectedDate != pickedDate && pickedDate != null) {
-    print(selectedDate);
-
     setDate(pickedDate);
   }
 }
