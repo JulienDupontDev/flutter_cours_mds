@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_cours/screens/pokemon/blocs/pokemon_bloc.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/pokemons_data/pokemon_bloc.dart';
 
 class SearchBar extends StatelessWidget {
   const SearchBar({Key? key}) : super(key: key);

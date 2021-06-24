@@ -12,6 +12,8 @@ class PokemonsFetched extends PokemonEvent {
   PokemonsFetched({this.query = "", this.page = 1});
 }
 
+
+
 // class PokemonDetails extends PokemonEvent {
 //   // String? id;
 

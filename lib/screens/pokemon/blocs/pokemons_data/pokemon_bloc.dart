@@ -12,9 +12,7 @@ part 'pokemon_event.dart';
 part 'pokemon_state.dart';
 
 class PokemonBloc extends Bloc<PokemonEvent, PokemonState> {
-  PokemonBloc({required this.httpClient}) : super(const PokemonState());
-
-  final http.Client httpClient;
+  PokemonBloc() : super(const PokemonState());
 
   @override
   Stream<Transition<PokemonEvent, PokemonState>> transformEvents(
@@ -22,7 +20,7 @@ class PokemonBloc extends Bloc<PokemonEvent, PokemonState> {
     TransitionFunction<PokemonEvent, PokemonState> transitionFn,
   ) {
     return super.transformEvents(
-      events.debounceTime(const Duration(milliseconds: 100)),
+      events.debounceTime(const Duration(milliseconds: 500)),
       transitionFn,
     );
   }
@@ -31,6 +29,36 @@ class PokemonBloc extends Bloc<PokemonEvent, PokemonState> {
   Stream<PokemonState> mapEventToState(PokemonEvent event) async* {
     if (event is PokemonsFetched) {
       yield await _mapPostFetchedToState(state, event.query, event.page);
+    }
+  }
+
+  Future<PokemonState> _mapPokemonFavoriteRehydrate(
+      PokemonState state, List<String> favorites) async {
+    try {
+      return state.copyWith(favorites: favorites);
+    } catch (e) {
+      return state;
+    }
+  }
+
+  Future<PokemonState> _mapPokemonFavoriteToState(
+      PokemonState state, String id) async {
+    List<String> favorites = [...state.favorites];
+    print("hi ${state.favorites}");
+    try {
+      print(favorites.contains(id));
+      if (favorites.contains(id)) {
+        print("yes");
+        favorites.removeWhere((element) => element == id);
+      } else {
+        print("add");
+        favorites.add(id);
+      }
+      print("hi 2 $favorites");
+
+      return state.copyWith(favorites: favorites);
+    } catch (e) {
+      return state;
     }
   }
 
@@ -52,6 +80,7 @@ class PokemonBloc extends Bloc<PokemonEvent, PokemonState> {
       final pokemons = await _fetchPokemons(query, page);
       return pokemons.isEmpty
           ? state.copyWith(
+              status: PokemonStatus.loading,
               hasReachedMax: true,
               page: page,
               query: query,
@@ -73,9 +102,7 @@ class PokemonBloc extends Bloc<PokemonEvent, PokemonState> {
 
   Future<Map<String, dynamic>> _fetchPokemons(String query, int page) async {
     final dynamic response = await getPokemons(query, page);
-    if (response == null) throw Exception('error fetching pokemons');
     List<PokemonPreview> pokemonsToAdd = [];
-    // print();
     response['data'].forEach((pokemon) {
       pokemonsToAdd.add(PokemonPreview(
           id: pokemon['id'],
@@ -87,7 +114,5 @@ class PokemonBloc extends Bloc<PokemonEvent, PokemonState> {
       "totalCount": response['totalCount'],
       "count": response['count']
     };
-
-    throw Exception('error fetching pokemons');
   }
 }

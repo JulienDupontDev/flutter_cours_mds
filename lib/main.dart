@@ -1,8 +1,12 @@
+// @dart=2.9
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cours/screens/exo_1/exo1.dart';
 import 'package:flutter_cours/screens/exo_2/login.dart';
 import 'package:flutter_cours/screens/exo_2/todos.dart';
 import 'package:flutter_cours/screens/home_page/home.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/pokemons_data/pokemon_bloc.dart';
 import 'package:flutter_cours/screens/pokemon/pokemon.dart';
 
 void main() {
@@ -33,7 +37,8 @@ class MyApp extends StatelessWidget {
         "/exo1": (context) => Exo1(title: "Exercice 1"),
         "/exo2": (context) => Login(title: "Exercice Sign in"),
         "/exo2/todos": (context) => Todos(title: "Exercice Todos"),
-        "/pokemon": (context) => Pokemons(),
+        "/pokemon": (context) =>
+            BlocProvider(create: (_) => PokemonBloc(), child: Pokemons())
       },
     );
   }
