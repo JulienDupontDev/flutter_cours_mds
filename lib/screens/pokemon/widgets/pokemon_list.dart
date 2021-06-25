@@ -38,10 +38,6 @@ class _PokemonListState extends State<PokemonList> {
     if (!_scrollController.hasClients) return false;
     return (_scrollController.position.maxScrollExtent * 0.7) <
         _scrollController.position.pixels;
-    // final currentScroll = _scrollController.offset;
-    // print("max wanted :  ${maxScroll * 0.5}");
-    // print("current $currentScroll");
-    // return currentScroll >= (maxScroll * 0.2);
   }
 
   @override
@@ -61,7 +57,7 @@ class _PokemonListState extends State<PokemonList> {
                   ? "${_pokemonBloc.state.totalCount.toString()} results"
                   : ""),
               Container(
-                height: MediaQuery.of(context).size.height - 160,
+                height: MediaQuery.of(context).size.height * 0.8,
                 child: Stack(children: [
                   RefreshIndicator(
                     onRefresh: refresh,
@@ -79,7 +75,7 @@ class _PokemonListState extends State<PokemonList> {
                   ),
                   Visibility(
                     child: Positioned(
-                        bottom: 0,
+                        bottom: MediaQuery.of(context).size.height * 0.08,
                         right: 5.0,
                         child: FloatingActionButton(
                             onPressed: () => _scrollController.animateTo(0.0,

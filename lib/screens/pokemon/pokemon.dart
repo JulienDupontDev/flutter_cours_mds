@@ -36,6 +36,7 @@ class _PokemonsState extends State<Pokemons>
       return prefs.getStringList("favorites");
     });
     _init();
+    throw Exception("This is a crash!");
   }
 
   @override
@@ -50,9 +51,12 @@ class _PokemonsState extends State<Pokemons>
     try {
       List<String> favorites = prefs.getStringList("favorites") as List<String>;
       context.read<PokemonBloc>().add(PokemonsFetched());
-      context
-          .read<FavoritesBloc>()
-          .add(PokemonFavoritesRehydrate(favorites: [...favorites]));
+
+      if (favorites == null) {
+        prefs.setStringList("favorites", []);
+      }
+      context.read<FavoritesBloc>().add(PokemonFavoritesRehydrate(
+          favorites: favorites == null ? [] : [...favorites]));
       // _pokemonBloc.add(PokemonFavoritesRehydrate(favorites: favorites));
     } catch (e) {}
   }

@@ -94,6 +94,7 @@ class _PokemonPreviewCardState extends State<PokemonPreviewCard> {
                                         ),
                                       ),
                                       IconButton(
+                                          color: Colors.yellow[600],
                                           splashRadius: 20.0,
                                           onPressed: () => _setFavorite(
                                               [...state.favorites],

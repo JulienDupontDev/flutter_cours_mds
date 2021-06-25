@@ -11,6 +11,7 @@ import 'package:flutter_cours/screens/pokemon/blocs/favorites/favorites_bloc.dar
 import 'package:flutter_cours/screens/pokemon/blocs/theme.dart';
 import 'package:flutter_cours/screens/pokemon/pokemon_api_client.dart';
 import 'package:flutter_radar_chart/flutter_radar_chart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PokemonDetailsView extends StatefulWidget {
   const PokemonDetailsView({Key? key, required this.pokemonId})
@@ -24,7 +25,12 @@ class PokemonDetailsView extends StatefulWidget {
 class _PokemosDetailsViewState extends State<PokemonDetailsView> {
   bool _isLoading = true;
   final String pokemonId;
-  late Map<String, dynamic> data;
+  late Future<Map<String, dynamic>> _data;
+
+  late FavoritesBloc _favoritesBloc;
+  late Future<List<String>?> _favorites;
+
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   _PokemosDetailsViewState(this.pokemonId);
 
@@ -32,17 +38,16 @@ class _PokemosDetailsViewState extends State<PokemonDetailsView> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    _data = fetchData();
+    _favoritesBloc = context.read<FavoritesBloc>();
+    _favorites = _prefs.then((SharedPreferences prefs) {
+      return prefs.getStringList("favorites");
+    });
   }
 
-  Future<dynamic> fetchData() {
-    return getPokemonDetails(widget.pokemonId).then((value) {
-      setState(() {
-        if (value != null) {
-          data = value['data'];
-          _isLoading = false;
-        }
-      });
-      return true;
+  Future<Map<String, dynamic>> fetchData() async {
+    return getPokemonDetails(pokemonId).then((value) {
+      return value['data'];
     });
   }
 
@@ -59,84 +64,118 @@ class _PokemosDetailsViewState extends State<PokemonDetailsView> {
       Theme(
           data: PokemonsTheme().theme,
           child: FutureBuilder(
-              future: fetchData(),
-              builder: (context, snapshot) {
-                return Scaffold(
-                    floatingActionButtonLocation:
-                        FloatingActionButtonLocation.centerFloat,
-                    floatingActionButton: FloatingActionButton(
-                      child: Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    body: !snapshot.hasData
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [CircularProgressIndicator()]),
-                            ],
-                          )
-                        : snapshot.error != null
-                            ? Text("Herro")
-                            : Container(
-                                width: MediaQuery.of(context).size.width,
-                                height: MediaQuery.of(context).size.height,
-                                decoration: BoxDecoration(
-                                  image: DecorationImage(
-                                    image:
-                                        NetworkImage(data['images']['large']),
-                                    fit: BoxFit.cover,
-                                    colorFilter: new ColorFilter.mode(
-                                        Colors.black.withOpacity(0.5),
-                                        BlendMode.dstATop),
-                                  ),
-                                ),
-                                child: SingleChildScrollView(
-                                  physics: AlwaysScrollableScrollPhysics(),
-                                  child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.3,
-                                          child: header(data),
-                                        ),
-                                        Inner(data, context),
-                                      ]),
-                                ),
-                              ));
+              future: Future.wait([_data, _favorites]),
+              builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
+                return _body(snapshot);
               }));
-}
 
-Widget header(data) {
-  // print("is favotite $isFavorite");
-  return BlocBuilder<FavoritesBloc, FavoritesState>(
-      bloc: FavoritesBloc(),
-      builder: (context, state) {
-        print(state);
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Expanded(flex: 9, child: Text(data['flavorText'] ?? "Pokémon")),
-              Expanded(
-                flex: 1,
-                child: IconButton(
-                  icon: Icon(Icons.star_border),
-                  onPressed: () {},
-                ),
-              )
-            ],
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+  Widget _body(AsyncSnapshot snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [CircularProgressIndicator()]),
+        ],
+      );
+    }
+    if (snapshot.connectionState == ConnectionState.done) {
+      if (snapshot.hasError) {
+        return Center(
+          child: Text(
+            snapshot.error.toString(),
+            style: TextStyle(fontSize: 18),
           ),
         );
+      }
+      return BlocBuilder<FavoritesBloc, FavoritesState>(
+          builder: (context, state) {
+        return Scaffold(
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: FloatingActionButton(
+              child: Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            body: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(snapshot.data[0]['images']['large']),
+                  fit: BoxFit.cover,
+                  colorFilter: new ColorFilter.mode(
+                      Colors.black.withOpacity(0.5), BlendMode.dstATop),
+                ),
+              ),
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.3,
+                    child: header(snapshot.data[0], state),
+                  ),
+                  Inner(snapshot.data[0], context),
+                ]),
+              ),
+            ));
       });
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [CircularProgressIndicator()]),
+      ],
+    );
+  }
+
+  Future<void> _setFavorite(favorites, isFavorite) async {
+    final SharedPreferences prefs = await _prefs;
+    try {
+      _favoritesBloc.add(PokemonFavorite(id: widget.pokemonId));
+
+      if (prefs.getStringList("favorites")!.contains(widget.pokemonId)) {
+        favorites!.removeWhere((element) => element == widget.pokemonId);
+        prefs.setStringList("favorites", favorites);
+      } else {
+        prefs.setStringList("favorites",
+            [...?prefs.getStringList("favorites"), this.widget.pokemonId]);
+      }
+    } catch (e) {}
+  }
+
+  Widget header(data, FavoritesState state) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Expanded(flex: 9, child: Text(data['flavorText'] ?? "Pokémon")),
+          Expanded(
+            flex: 1,
+            child: IconButton(
+              color: Colors.yellow[600],
+              iconSize: 30,
+              splashRadius: 20,
+              icon: Icon(state.favorites.contains(widget.pokemonId)
+                  ? Icons.star
+                  : Icons.star_border),
+              onPressed: () => _setFavorite(
+                  data[1], state.favorites.contains(widget.pokemonId)),
+            ),
+          )
+        ],
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+      ),
+    );
+  }
 }
 
 Widget Inner(data, context) {

@@ -68,19 +68,18 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
   Future<FavoritesState> _fetchFavoritePokemons(
       {state, List<String> favorites = const [], int page = 1}) async {
     List<PokemonPreview> pokemonsToAdd = [];
-
+    if (favorites == null) {
+      return state;
+    }
     for (String id in favorites) {
       final dynamic response = await getPokemonDetails(id);
-      if (response == null) continue;
+      if (response["data"] == null || response == null) continue;
       var pokemon = response['data'];
-      print("pokemons to add $pokemonsToAdd");
-
       pokemonsToAdd.add(PokemonPreview(
           id: pokemon['id'],
           name: pokemon['name'],
           imageUrl: pokemon['images']['small']));
     }
-    print("pokemons to return $pokemonsToAdd");
     return state.copyWith(favoritePokemonsPreviews: pokemonsToAdd);
   }
 }
