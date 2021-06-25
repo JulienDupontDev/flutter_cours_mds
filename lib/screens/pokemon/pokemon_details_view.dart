@@ -5,7 +5,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cours/models/pokemon_detailed.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/favorites/favorites_bloc.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/theme.dart';
 import 'package:flutter_cours/screens/pokemon/pokemon_api_client.dart';
 import 'package:flutter_radar_chart/flutter_radar_chart.dart';
 
@@ -53,77 +56,87 @@ class _PokemosDetailsViewState extends State<PokemonDetailsView> {
   Widget build(
     BuildContext context,
   ) =>
-      FutureBuilder(
-          future: fetchData(),
-          builder: (context, snapshot) {
-            return Scaffold(
-                floatingActionButtonLocation:
-                    FloatingActionButtonLocation.centerFloat,
-                floatingActionButton: FloatingActionButton(
-                  child: Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                body: !snapshot.hasData
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Column(
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [CircularProgressIndicator()]),
-                        ],
-                      )
-                    : snapshot.error != null
-                        ? Text("Herro")
-                        : Container(
-                            width: MediaQuery.of(context).size.width,
-                            height: MediaQuery.of(context).size.height,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: NetworkImage(data['images']['large']),
-                                fit: BoxFit.cover,
-                                colorFilter: new ColorFilter.mode(
-                                    Colors.black.withOpacity(0.5),
-                                    BlendMode.dstATop),
-                              ),
-                            ),
-                            child: SingleChildScrollView(
-                              physics: AlwaysScrollableScrollPhysics(),
-                              child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      height:
-                                          MediaQuery.of(context).size.height *
+      Theme(
+          data: PokemonsTheme().theme,
+          child: FutureBuilder(
+              future: fetchData(),
+              builder: (context, snapshot) {
+                return Scaffold(
+                    floatingActionButtonLocation:
+                        FloatingActionButtonLocation.centerFloat,
+                    floatingActionButton: FloatingActionButton(
+                      child: Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    body: !snapshot.hasData
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Column(
+                                  mainAxisSize: MainAxisSize.max,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [CircularProgressIndicator()]),
+                            ],
+                          )
+                        : snapshot.error != null
+                            ? Text("Herro")
+                            : Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: MediaQuery.of(context).size.height,
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image:
+                                        NetworkImage(data['images']['large']),
+                                    fit: BoxFit.cover,
+                                    colorFilter: new ColorFilter.mode(
+                                        Colors.black.withOpacity(0.5),
+                                        BlendMode.dstATop),
+                                  ),
+                                ),
+                                child: SingleChildScrollView(
+                                  physics: AlwaysScrollableScrollPhysics(),
+                                  child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
                                               0.3,
-                                      child: Header(data),
-                                    ),
-                                    Inner(data, context),
-                                  ]),
-                            ),
-                          ));
-          });
+                                          child: header(data),
+                                        ),
+                                        Inner(data, context),
+                                      ]),
+                                ),
+                              ));
+              }));
 }
 
-Widget Header(data) {
-  return Padding(
-    padding: const EdgeInsets.all(20),
-    child: Row(
-      children: [
-        Expanded(flex: 9, child: Text(data['flavorText'] ?? "Pokémon")),
-        Expanded(
-          flex: 1,
-          child: IconButton(
-            icon: Icon(Icons.star_border),
-            onPressed: () {},
+Widget header(data) {
+  // print("is favotite $isFavorite");
+  return BlocBuilder<FavoritesBloc, FavoritesState>(
+      bloc: FavoritesBloc(),
+      builder: (context, state) {
+        print(state);
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Expanded(flex: 9, child: Text(data['flavorText'] ?? "Pokémon")),
+              Expanded(
+                flex: 1,
+                child: IconButton(
+                  icon: Icon(Icons.star_border),
+                  onPressed: () {},
+                ),
+              )
+            ],
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
           ),
-        )
-      ],
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-    ),
-  );
+        );
+      });
 }
 
 Widget Inner(data, context) {
@@ -235,11 +248,12 @@ Widget Inner(data, context) {
               ],
             ),
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text("${data['name']}'s attacks"),
-                Container(
-                  height: data['attacks'].length * 50.0,
+                Flexible(
                   child: ListView(
+                    shrinkWrap: true,
                     children: [
                       ...data['attacks'].map((attack) {
                         return Row(

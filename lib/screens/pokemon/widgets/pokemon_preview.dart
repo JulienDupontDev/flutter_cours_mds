@@ -35,7 +35,7 @@ class _PokemonPreviewCardState extends State<PokemonPreviewCard> {
     try {
       _favoritesBloc.add(PokemonFavorite(id: widget.pokemon.id));
 
-      if (isFavorite) {
+      if (prefs.getStringList("favorites")!.contains(widget.pokemon.id)) {
         favorites!.removeWhere((element) => element == widget.pokemon.id);
         prefs.setStringList("favorites", favorites);
       } else {
@@ -57,74 +57,80 @@ class _PokemonPreviewCardState extends State<PokemonPreviewCard> {
               if (snapshot.hasError) {
                 return Text('Error: ${snapshot.error}');
               } else {
+                final _bloc = BlocProvider.of<FavoritesBloc>(context);
                 return BlocBuilder<FavoritesBloc, FavoritesState>(
+                    bloc: _bloc,
                     builder: (context, state) {
-                  return Container(
-                    margin: const EdgeInsets.all(20),
-                    child: GestureDetector(
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => PokemonDetailsView(
-                                    pokemonId: widget.pokemon.id,
-                                  ))),
-                      child: Card(
-                        elevation: 6,
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Expanded(
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(widget.pokemon.name),
+                      return Container(
+                        margin: const EdgeInsets.all(20),
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => BlocProvider.value(
+                                      value: BlocProvider.of<FavoritesBloc>(
+                                          context),
+                                      child: PokemonDetailsView(
+                                        pokemonId: widget.pokemon.id,
+                                      )))),
+                          child: Card(
+                            elevation: 6,
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Expanded(
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(widget.pokemon.name),
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                      splashRadius: 20.0,
-                                      onPressed: () => _setFavorite(
-                                          [...state.favorites],
-                                          state.favorites
-                                              .contains(widget.pokemon.id)),
-                                      icon: Icon(state.favorites
-                                              .contains(widget.pokemon.id)
-                                          ? Icons.star
-                                          : Icons.star_outline))
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: CachedNetworkImage(
-                                imageUrl: widget.pokemon.imageUrl,
-                                imageBuilder: (context, imageProvider) =>
-                                    Container(
-                                  decoration: BoxDecoration(
-                                    image: DecorationImage(
-                                      image: imageProvider,
-                                      fit: BoxFit.contain,
-                                    ),
+                                      IconButton(
+                                          splashRadius: 20.0,
+                                          onPressed: () => _setFavorite(
+                                              [...state.favorites],
+                                              state.favorites
+                                                  .contains(widget.pokemon.id)),
+                                          icon: Icon(state.favorites
+                                                  .contains(widget.pokemon.id)
+                                              ? Icons.star
+                                              : Icons.star_outline))
+                                    ],
                                   ),
                                 ),
-                                placeholder: (context, url) =>
-                                    Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                    Icon(Icons.error),
-                              ),
-                              flex: 5,
-                            )
-                          ],
+                                Expanded(
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.pokemon.imageUrl,
+                                    imageBuilder: (context, imageProvider) =>
+                                        Container(
+                                      decoration: BoxDecoration(
+                                        image: DecorationImage(
+                                          image: imageProvider,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    ),
+                                    placeholder: (context, url) => Center(
+                                        child: CircularProgressIndicator()),
+                                    errorWidget: (context, url, error) =>
+                                        Icon(Icons.error),
+                                  ),
+                                  flex: 5,
+                                )
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                });
+                      );
+                    });
               }
           }
         });
