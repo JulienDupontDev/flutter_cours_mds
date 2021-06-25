@@ -180,7 +180,6 @@ class _PokemosDetailsViewState extends State<PokemonDetailsView> {
 
 Widget Inner(data, context) {
   return Container(
-    height: 1000,
     width: MediaQuery.of(context).size.width,
     child: Card(
       margin: const EdgeInsets.all(10),
@@ -286,40 +285,79 @@ Widget Inner(data, context) {
                 ),
               ],
             ),
+            Visibility(
+              visible: data['weaknesses'] != null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("${data['name']}'s weaknesses",
+                      style: TextStyle(fontSize: 20)),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        ...?data['weaknesses']?.map((weakness) {
+                          return Column(
+                            children: [
+                              ListTile(
+                                tileColor: Colors.blueGrey,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(10))),
+                                leading: Text(weakness["type"]),
+                                trailing: Text(weakness["value"]),
+                              ),
+                              Container(
+                                height: 10,
+                              )
+                            ],
+                          );
+                        })
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: 10,
+            ),
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("${data['name']}'s attacks"),
+                Text("${data['name']}'s attacks",
+                    style: TextStyle(fontSize: 20)),
                 Flexible(
                   child: ListView(
                     shrinkWrap: true,
                     children: [
                       ...data['attacks'].map((attack) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.max,
+                        return Column(
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child: Row(
-                                children: [
-                                  Text(attack['name']),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Visibility(
+                            ListTile(
+                              tileColor: Colors.blueGrey,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10))),
+                              leading: Text(attack["name"]),
+                              trailing: Text(attack["damage"]),
+                              title: Visibility(
                                   visible: attack['damage'] != "",
                                   child: LinearProgressIndicator(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.blueGrey,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(Colors.white),
                                     minHeight: 10,
-                                    value: 10.0,
+                                    value: double.parse(attack["damage"] == ""
+                                            ? "0"
+                                            : attack["damage"].replaceAll(
+                                                RegExp("[^0-9]"), '')) /
+                                        100.0,
                                   )),
                             ),
-                            Spacer(
-                              flex: 1,
-                            ),
-                            Text(attack['damage'])
+                            Container(
+                              height: 10,
+                            )
                           ],
                         );
                       })
@@ -329,9 +367,12 @@ Widget Inner(data, context) {
               ],
             ),
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text("Set : "),
+                Text(
+                  "Set",
+                  style: TextStyle(fontSize: 20),
+                ),
                 ListTile(
                   visualDensity: VisualDensity.comfortable,
                   tileColor: Colors.blueGrey,
@@ -345,6 +386,9 @@ Widget Inner(data, context) {
                   subtitle: Text("id : ${data['set']['id']}"),
                 )
               ],
+            ),
+            Container(
+              height: 50,
             )
           ],
         ),

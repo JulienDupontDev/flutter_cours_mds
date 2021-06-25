@@ -36,7 +36,6 @@ class _PokemonsState extends State<Pokemons>
       return prefs.getStringList("favorites");
     });
     _init();
-    throw Exception("This is a crash!");
   }
 
   @override
