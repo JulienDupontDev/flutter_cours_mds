@@ -36,9 +36,12 @@ class _PokemonListState extends State<PokemonList> {
 
   bool get _isBottom {
     if (!_scrollController.hasClients) return false;
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.offset;
-    return currentScroll >= (maxScroll * 0.2);
+    return (_scrollController.position.maxScrollExtent * 0.7) <
+        _scrollController.position.pixels;
+    // final currentScroll = _scrollController.offset;
+    // print("max wanted :  ${maxScroll * 0.5}");
+    // print("current $currentScroll");
+    // return currentScroll >= (maxScroll * 0.2);
   }
 
   @override
