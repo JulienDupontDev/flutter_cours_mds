@@ -26,8 +26,5 @@ jobs:
         appId: ${{secrets.FIREBASE_ANDROID_APPID}}
         token: ${{secrets.FIREBASE_TOKEN}}
         groups: testers
-        releaseNotes: "
-        - added favorites feature
-        - improved bloc state
-        "
+        releaseNotes: "pre final app"
         file: build/app/outputs/apk/release/app-release.apk
