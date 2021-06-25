@@ -17,6 +17,12 @@ class PokemonFavorite extends FavoritesEvent {
   PokemonFavorite({required this.id});
 }
 
+class FavoritePokemonsFetch extends FavoritesEvent {
+  final List<String> favorites;
+
+  FavoritePokemonsFetch({required this.favorites});
+}
+
 // class PokemonDetails extends PokemonEvent {
 //   // String? id;
 

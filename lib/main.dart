@@ -40,8 +40,8 @@ class MyApp extends StatelessWidget {
         "/exo2/todos": (context) => Todos(title: "Exercice Todos"),
         "/pokemon": (context) => MultiBlocProvider(
               providers: [
-                BlocProvider(lazy: false, create: (_) => PokemonBloc()),
-                BlocProvider(lazy: false, create: (_) => FavoritesBloc())
+                BlocProvider(create: (_) => PokemonBloc()),
+                BlocProvider(create: (_) => FavoritesBloc())
               ],
               child: Pokemons(),
             )

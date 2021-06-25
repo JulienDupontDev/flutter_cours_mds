@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_cours/models/pokemon_preview.dart';
 import 'package:flutter_cours/screens/pokemon/blocs/pokemons_data/pokemon_bloc.dart';
+import 'package:flutter_cours/screens/pokemon/pokemon_api_client.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'favorites_event.dart';
@@ -31,6 +33,11 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
     if (event is PokemonFavoritesRehydrate) {
       yield await _mapPokemonFavoriteRehydrate(state, event.favorites);
     }
+
+    if (event is FavoritePokemonsFetch) {
+      yield await _fetchFavoritePokemons(
+          state: state, favorites: event.favorites, page: 1);
+    }
   }
 
   Future<FavoritesState> _mapPokemonFavoriteRehydrate(
@@ -56,5 +63,23 @@ class FavoritesBloc extends Bloc<FavoritesEvent, FavoritesState> {
     } catch (e) {
       return state;
     }
+  }
+
+  Future<FavoritesState> _fetchFavoritePokemons(
+      {state, List<String> favorites = const [], int page = 1}) async {
+    List<PokemonPreview> pokemonsToAdd = [];
+    if (favorites == null) {
+      return state;
+    }
+    for (String id in favorites) {
+      final dynamic response = await getPokemonDetails(id);
+      if (response["data"] == null || response == null) continue;
+      var pokemon = response['data'];
+      pokemonsToAdd.add(PokemonPreview(
+          id: pokemon['id'],
+          name: pokemon['name'],
+          imageUrl: pokemon['images']['small']));
+    }
+    return state.copyWith(favoritePokemonsPreviews: pokemonsToAdd);
   }
 }

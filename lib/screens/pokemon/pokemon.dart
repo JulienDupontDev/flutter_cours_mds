@@ -3,7 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cours/models/pokemon_preview.dart';
 import 'package:flutter_cours/screens/pokemon/blocs/pokemons_data/pokemon_bloc.dart';
-import 'package:flutter_cours/screens/pokemon/widgets/favorites_page.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/theme.dart';
+import 'package:flutter_cours/screens/pokemon/favorites_page.dart';
 import 'package:flutter_cours/screens/pokemon/widgets/pokemon_list.dart';
 import 'package:flutter_cours/screens/pokemon/widgets/pokemon_preview.dart';
 import 'package:http/http.dart' as http;
@@ -49,52 +50,64 @@ class _PokemonsState extends State<Pokemons>
     try {
       List<String> favorites = prefs.getStringList("favorites") as List<String>;
       context.read<PokemonBloc>().add(PokemonsFetched());
-      context
-          .read<FavoritesBloc>()
-          .add(PokemonFavoritesRehydrate(favorites: [...favorites]));
+
+      if (favorites == null) {
+        prefs.setStringList("favorites", []);
+      }
+      context.read<FavoritesBloc>().add(PokemonFavoritesRehydrate(
+          favorites: favorites == null ? [] : [...favorites]));
       // _pokemonBloc.add(PokemonFavoritesRehydrate(favorites: favorites));
     } catch (e) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: _favorites,
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-              return const CircularProgressIndicator();
-            default:
-              if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              } else {
-                return Scaffold(
-                    appBar: AppBar(
-                        title: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                          Text("Pokemons api"),
-                          IconButton(
-                              tooltip: "Favorites",
-                              splashRadius: 20,
-                              onPressed: () => {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                FavoritePokemons()))
-                                  },
-                              icon: Icon(Icons.star))
-                        ])),
-                    body: BlocBuilder<FavoritesBloc, FavoritesState>(
-                        builder: (context, state) {
-                      return SingleChildScrollView(
-                        child: Column(children: [SearchBar(), PokemonList()]),
-                      );
-                    }));
-              }
-          }
-        });
+    return Theme(
+      data: PokemonsTheme().theme,
+      child: FutureBuilder(
+          future: _favorites,
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.waiting:
+                return const CircularProgressIndicator();
+              default:
+                if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  return BlocBuilder<FavoritesBloc, FavoritesState>(
+                      builder: (context, state) {
+                    return Scaffold(
+                        appBar: AppBar(
+                            title: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                              Text("Pokemons api"),
+                              IconButton(
+                                  tooltip: "Favorites",
+                                  splashRadius: 20,
+                                  onPressed: () => {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (_) =>
+                                                    BlocProvider.value(
+                                                        value: BlocProvider.of<
+                                                                FavoritesBloc>(
+                                                            context),
+                                                        child:
+                                                            FavoritePokemons())))
+                                      },
+                                  icon: Icon(Icons.star))
+                            ])),
+                        body: SingleChildScrollView(
+                          child: Column(children: [SearchBar(), PokemonList()]),
+                        ));
+                  });
+                }
+            }
+          }),
+    );
   }
 }

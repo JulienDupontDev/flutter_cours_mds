@@ -5,9 +5,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cours/models/pokemon_detailed.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/favorites/favorites_bloc.dart';
+import 'package:flutter_cours/screens/pokemon/blocs/theme.dart';
 import 'package:flutter_cours/screens/pokemon/pokemon_api_client.dart';
 import 'package:flutter_radar_chart/flutter_radar_chart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PokemonDetailsView extends StatefulWidget {
   const PokemonDetailsView({Key? key, required this.pokemonId})
@@ -21,7 +25,12 @@ class PokemonDetailsView extends StatefulWidget {
 class _PokemosDetailsViewState extends State<PokemonDetailsView> {
   bool _isLoading = true;
   final String pokemonId;
-  late Map<String, dynamic> data;
+  late Future<Map<String, dynamic>> _data;
+
+  late FavoritesBloc _favoritesBloc;
+  late Future<List<String>?> _favorites;
+
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   _PokemosDetailsViewState(this.pokemonId);
 
@@ -29,17 +38,16 @@ class _PokemosDetailsViewState extends State<PokemonDetailsView> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    _data = fetchData();
+    _favoritesBloc = context.read<FavoritesBloc>();
+    _favorites = _prefs.then((SharedPreferences prefs) {
+      return prefs.getStringList("favorites");
+    });
   }
 
-  Future<dynamic> fetchData() {
-    return getPokemonDetails(widget.pokemonId).then((value) {
-      setState(() {
-        if (value != null) {
-          data = value['data'];
-          _isLoading = false;
-        }
-      });
-      return true;
+  Future<Map<String, dynamic>> fetchData() async {
+    return getPokemonDetails(pokemonId).then((value) {
+      return value['data'];
     });
   }
 
@@ -53,82 +61,125 @@ class _PokemosDetailsViewState extends State<PokemonDetailsView> {
   Widget build(
     BuildContext context,
   ) =>
-      FutureBuilder(
-          future: fetchData(),
-          builder: (context, snapshot) {
-            return Scaffold(
-                floatingActionButtonLocation:
-                    FloatingActionButtonLocation.centerFloat,
-                floatingActionButton: FloatingActionButton(
-                  child: Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                body: !snapshot.hasData
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Column(
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [CircularProgressIndicator()]),
-                        ],
-                      )
-                    : snapshot.error != null
-                        ? Text("Herro")
-                        : Container(
-                            width: MediaQuery.of(context).size.width,
-                            height: MediaQuery.of(context).size.height,
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: NetworkImage(data['images']['large']),
-                                fit: BoxFit.cover,
-                                colorFilter: new ColorFilter.mode(
-                                    Colors.black.withOpacity(0.5),
-                                    BlendMode.dstATop),
-                              ),
-                            ),
-                            child: SingleChildScrollView(
-                              physics: AlwaysScrollableScrollPhysics(),
-                              child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      height:
-                                          MediaQuery.of(context).size.height *
-                                              0.3,
-                                      child: Header(data),
-                                    ),
-                                    Inner(data, context),
-                                  ]),
-                            ),
-                          ));
-          });
-}
+      Theme(
+          data: PokemonsTheme().theme,
+          child: FutureBuilder(
+              future: Future.wait([_data, _favorites]),
+              builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
+                return _body(snapshot);
+              }));
 
-Widget Header(data) {
-  return Padding(
-    padding: const EdgeInsets.all(20),
-    child: Row(
-      children: [
-        Expanded(flex: 9, child: Text(data['flavorText'] ?? "Pokémon")),
-        Expanded(
-          flex: 1,
-          child: IconButton(
-            icon: Icon(Icons.star_border),
-            onPressed: () {},
+  Widget _body(AsyncSnapshot snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [CircularProgressIndicator()]),
+        ],
+      );
+    }
+    if (snapshot.connectionState == ConnectionState.done) {
+      if (snapshot.hasError) {
+        return Center(
+          child: Text(
+            snapshot.error.toString(),
+            style: TextStyle(fontSize: 18),
           ),
-        )
+        );
+      }
+      return BlocBuilder<FavoritesBloc, FavoritesState>(
+          builder: (context, state) {
+        return Scaffold(
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: FloatingActionButton(
+              child: Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            body: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(snapshot.data[0]['images']['large']),
+                  fit: BoxFit.cover,
+                  colorFilter: new ColorFilter.mode(
+                      Colors.black.withOpacity(0.5), BlendMode.dstATop),
+                ),
+              ),
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.3,
+                    child: header(snapshot.data[0], state),
+                  ),
+                  Inner(snapshot.data[0], context),
+                ]),
+              ),
+            ));
+      });
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [CircularProgressIndicator()]),
       ],
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-    ),
-  );
+    );
+  }
+
+  Future<void> _setFavorite(favorites, isFavorite) async {
+    final SharedPreferences prefs = await _prefs;
+    try {
+      _favoritesBloc.add(PokemonFavorite(id: widget.pokemonId));
+
+      if (prefs.getStringList("favorites")!.contains(widget.pokemonId)) {
+        favorites!.removeWhere((element) => element == widget.pokemonId);
+        prefs.setStringList("favorites", favorites);
+      } else {
+        prefs.setStringList("favorites",
+            [...?prefs.getStringList("favorites"), this.widget.pokemonId]);
+      }
+    } catch (e) {}
+  }
+
+  Widget header(data, FavoritesState state) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Expanded(flex: 9, child: Text(data['flavorText'] ?? "Pokémon")),
+          Expanded(
+            flex: 1,
+            child: IconButton(
+              color: Colors.yellow[600],
+              iconSize: 30,
+              splashRadius: 20,
+              icon: Icon(state.favorites.contains(widget.pokemonId)
+                  ? Icons.star
+                  : Icons.star_border),
+              onPressed: () => _setFavorite(
+                  data[1], state.favorites.contains(widget.pokemonId)),
+            ),
+          )
+        ],
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+      ),
+    );
+  }
 }
 
 Widget Inner(data, context) {
   return Container(
-    height: 1000,
     width: MediaQuery.of(context).size.width,
     child: Card(
       margin: const EdgeInsets.all(10),
@@ -234,39 +285,79 @@ Widget Inner(data, context) {
                 ),
               ],
             ),
+            Visibility(
+              visible: data['weaknesses'] != null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("${data['name']}'s weaknesses",
+                      style: TextStyle(fontSize: 20)),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        ...?data['weaknesses']?.map((weakness) {
+                          return Column(
+                            children: [
+                              ListTile(
+                                tileColor: Colors.blueGrey,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(10))),
+                                leading: Text(weakness["type"]),
+                                trailing: Text(weakness["value"]),
+                              ),
+                              Container(
+                                height: 10,
+                              )
+                            ],
+                          );
+                        })
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: 10,
+            ),
             Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text("${data['name']}'s attacks"),
-                Container(
-                  height: data['attacks'].length * 50.0,
+                Text("${data['name']}'s attacks",
+                    style: TextStyle(fontSize: 20)),
+                Flexible(
                   child: ListView(
+                    shrinkWrap: true,
                     children: [
                       ...data['attacks'].map((attack) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.max,
+                        return Column(
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child: Row(
-                                children: [
-                                  Text(attack['name']),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Visibility(
+                            ListTile(
+                              tileColor: Colors.blueGrey,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10))),
+                              leading: Text(attack["name"]),
+                              trailing: Text(attack["damage"]),
+                              title: Visibility(
                                   visible: attack['damage'] != "",
                                   child: LinearProgressIndicator(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.blueGrey,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(Colors.white),
                                     minHeight: 10,
-                                    value: 10.0,
+                                    value: double.parse(attack["damage"] == ""
+                                            ? "0"
+                                            : attack["damage"].replaceAll(
+                                                RegExp("[^0-9]"), '')) /
+                                        100.0,
                                   )),
                             ),
-                            Spacer(
-                              flex: 1,
-                            ),
-                            Text(attack['damage'])
+                            Container(
+                              height: 10,
+                            )
                           ],
                         );
                       })
@@ -276,9 +367,12 @@ Widget Inner(data, context) {
               ],
             ),
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text("Set : "),
+                Text(
+                  "Set",
+                  style: TextStyle(fontSize: 20),
+                ),
                 ListTile(
                   visualDensity: VisualDensity.comfortable,
                   tileColor: Colors.blueGrey,
@@ -292,6 +386,9 @@ Widget Inner(data, context) {
                   subtitle: Text("id : ${data['set']['id']}"),
                 )
               ],
+            ),
+            Container(
+              height: 50,
             )
           ],
         ),
